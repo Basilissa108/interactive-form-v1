@@ -361,17 +361,17 @@ $("form").submit(function(e){
 	    sCreditCard = $("#cc-num").val();
 		sZip = $("#zip").val();
 		sCvv = $("#cvv").val();
-		if(sCreditCard === ""){
+		if(fnIsPaymentInfoValid(sCreditCard, 13, 16) === false){
 			$("#validation-error-cc-num").css("display", "block");
 		}else{
 			$("#validation-error-cc-num").css("display", "none");
 		}
-		if(sZip === ""){
+		if(fnIsPaymentInfoValid(sZip, 5, 5) === false){
 			$("#validation-error-zip").css("display", "block");
 		}else{
 			$("#validation-error-zip").css("display", "none");
 		}
-		if(sCvv === ""){
+		if(fnIsPaymentInfoValid(sCvv, 3, 3) === false){
 			$("#validation-error-cvv").css("display", "block");
 		}else{
 			$("#validation-error-cvv").css("display", "none");
@@ -387,7 +387,7 @@ $("form").submit(function(e){
     	}else if(fnIsPaymentInfoValid(sCreditCard, 13, 16) && fnIsPaymentInfoValid(sZip, 5, 5) && fnIsPaymentInfoValid(sCvv, 3, 3)){
     		this.submit();
     	}else{
-    		alert("Please enter valid payment information!");
+    		alert("Please enter valid payment information.");
     	}
     }
 })
