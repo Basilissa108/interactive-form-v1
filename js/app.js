@@ -14,12 +14,22 @@ let aSortedActivities = [];
 const aAllPaymentOptionsInfo = [$("#credit-card"), $("#paypal"), $("#bitcoin")];
 
 // ERRORS
-const sValidationErrorName = '<span id="validation-error-name" style="color:red; float:right;">Please enter your name, it is required.</span>';
-const sValidationErrorMail = '<span id="validation-error-mail" style="color:red; float:right;">Please enter a valid mail address, it is required.</span>';
-const sValidationErrorActivities = '<span id="validation-error-activities" style="color:red">Please select at least one activity.</span>';
-const sValidationErrorCcNum = '<span id="validation-error-cc-num" style="color:red; display:block; width: 100%">Enter a credit number with 13 - 16 digits.</span>';
-const sValidationErrorZip = '<span id="validation-error-zip" style="color:red; display:block">Enter a zip code with 5 digits.</span>';
-const sValidationErrorCvv = '<span id="validation-error-cvv" style="color:red; display:block">Enter a CVV with 3 digits.</span>';
+const sValidationErrorName = '<span id="validation-error-name" class="invalid" style="color:red; float:right; display:none">Please enter your name, it is required.</span>';
+const sValidationErrorMail = '<span id="validation-error-mail" class="invalid" style="color:red; float:right; display:none">Please enter a valid mail address. A mail address contains a @ character and ends on a domain name. E.g.: example@gmail.com</span>';
+const sValidationErrorActivities = '<span id="validation-error-activities" class="invalid" style="color:red; display:none">Please select at least one activity.</span>';
+const sValidationErrorCcNum = '<span id="validation-error-cc-num" class="payment invalid" style="color:red; display:none; width: 100%">Enter a credit number with 13 - 16 digits.</span>';
+const sValidationErrorZip = '<span id="validation-error-zip" class="payment invalid" style="color:red; display:none">Enter a zip code with 5 digits.</span>';
+const sValidationErrorCvv = '<span id="validation-error-cvv" class="payment invalid" style="color:red; display:none">Enter a CVV with 3 digits.</span>';
+const sValidationErrorPayment = '<span id="validation-error-payment" class="invalid" style="color:red; display:none">Please enter valid payment information.</span>';
+
+$('label[for="name"]').append(sValidationErrorName);
+$('label[for="mail"]').append(sValidationErrorMail);
+$(".activities").prepend(sValidationErrorActivities);
+
+$('label[for="payment"]').prepend(sValidationErrorPayment);
+$("#cc-num").parent().append(sValidationErrorCcNum);
+$("#zip").parent().append(sValidationErrorZip);
+$("#cvv").parent().append(sValidationErrorCvv);
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 /****************************************** FUNCTIONS - DESIGN ********************************************************/
@@ -133,18 +143,22 @@ function fnHidePaymentInfo(elementId){
 
 // function to check mail format with regex
 function fnIsMailValid(sMail) {
-    var regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     // return true or false
     return regex.test(sMail);
 }
 
 // function to check if the input is valid, assuming the input has to be an integer with a min and max length; return true or false
 function fnIsPaymentInfoValid(input, min, max){
-	if(Number.isInteger(parseInt(input)) === false || input.length < min || input.length > max){
-		return false;
+	let regex;
+	if(min === max){
+		let sRegex = "\\b\\d{"+min+"}\\b";
+		regex = new RegExp(sRegex, "g");
 	}else{
-		return true;
+		let sRegex = "\\b\\d{"+min+","+max+"}\\b";
+		regex = new RegExp(sRegex, "g");
 	}
+	return regex.test(input);
 }
 
 
@@ -177,7 +191,7 @@ window.addEventListener("DOMContentLoaded", function(){
 })
 
 // check if the name input field is empty, if it's no longer empty remove the error
-$("#name").change(function(){
+$("#name").bind('input propertychange', function(){
 	if($(this).val().length !== 0){
 		$(this).css("border", "");
 		$("#validation-error-name").remove();
@@ -188,7 +202,7 @@ $("#name").change(function(){
 })
 
 // when the mail input field changes, check if the input is in a valid mail format
-$("#mail").change(function(){
+$("#mail").bind('input propertychange', function() {
 	// pass the value of the mail input field to the function fnIsMailValid function - returns true or false, if it's false mark the field and display an message
     if(fnIsMailValid($(this).val()) === false){
     	$("#mail").css("border", "1px solid red");
@@ -245,8 +259,8 @@ $(".activities").change(function(e){
     // call fnCalculateTotal function and pass the selected activity and mathOperator to it
     fnCalculateTotal(activity, mathOperator);
     // check if any activities are checked and if there are, remove the error message (if it is displayed)
-    if($("#validation-error-activities").length !== 0 && $("input:checked").length !== 0){
-    	$("#validation-error-activities").remove();
+    if($("input:checked").length !== 0){
+    	$("#validation-error-activities").css("display", "none");
     }
 })
 
@@ -268,50 +282,44 @@ $("#payment").change(function(e){
 })
 
 // on change check the input, if it's not an integer with 13 - 16 digits, mark it invalid and display a message
-$("#cc-num").change(function(){
+$("#cc-num").bind('input propertychange', function(){
 	const creditCard = $(this).val();
 	const result = fnIsPaymentInfoValid(creditCard, 13, 16);
 	if(result){
 		// if input is valid remove error
 		$("#cc-num").css("border", "");
-		$("#validation-error-cc-num").remove();
+		$("#validation-error-cc-num").css("display", "none");
 	}else{
 		$("#cc-num").css("border", "1px solid red");
-		if($("#validation-error-cc-num").length === 0){
-			$('#cc-num').parent().append(sValidationErrorCcNum);
-		}
+		$("#validation-error-cc-num").css("display", "block");
 	}
 })
 
 // on change check the input, if it's not an integer with 5 digits, mark it invalid and display a message
-$("#zip").change(function(){
+$("#zip").bind('input propertychange', function(){
 	const zip = $(this).val();
 	const result = fnIsPaymentInfoValid(zip, 5, 5);
 	if(result){
 		// if input is valid remove error
 		$("#zip").css("border", "");
-		$("#validation-error-zip").remove();
+		$("#validation-error-zip").css("display", "none");
 	}else{
 		$("#zip").css("border", "1px solid red");
-		if($("#validation-error-zip").length === 0){
-			$('#zip').parent().append(sValidationErrorZip);
-		}
+		$("#validation-error-zip").css("display", "block");
 	}
 })
 
 // on change check the input, if it's not an integer with 3 digits, mark it invalid and display a message
-$("#cvv").change(function(){
+$("#cvv").bind('input propertychange', function(){
 	const cvv = $(this).val();
 	const result = fnIsPaymentInfoValid(cvv, 3, 3);
 	if(result){
 		// if input is valid remove error
 		$("#cvv").css("border", "");
-		$("#validation-error-cvv").remove();
+		$("#validation-error-cvv").css("display", "none");
 	}else{
 		$("#cvv").css("border", "1px solid red");
-		if($("#validation-error-cvv").length === 0){
-			$('#cvv').parent().append(sValidationErrorCvv)
-		}
+		$("#validation-error-cvv").css("display", "block");
 	}
 })
 
@@ -323,41 +331,63 @@ $("form").submit(function(e){
     const sMail = $("#mail").val();
     // get all checked activities
     const aCheckedActivities = $('input:checked');
+    // get chosen payment option
+    const selectedPaymentOption = $("#payment").val();
+    let sCreditCard;
+    let sZip;
+    let sCvv;
     // check if a name was entered, if it was not mark the field and display message
-	if(sName.length === 0){
+	if(sName === ""){
     	$("#name").css("border", "1px solid red");
-    	if($("#validation-error-name").length === 0){
-    		$('label[for="name"]').prepend(sValidationErrorName);
-    	}
+    	$('#validation-error-name').css("display", "block");
     }else{
     	// in case the input was invalid before, remove the mark and message
     	$("#name").css("border", "");
-    	$("#validation-error-name").remove();
+    	$("#validation-error-name").css("display", "none");
     }
     // check if the mail address is empty, if it is display an error (no need to check further here as it will happen on change of the input)
-    if(sMail.length === 0){
+    if(sMail === ""){
     	$("#mail").css("border", "1px solid red");
-    	if($("#validation-error-mail").length === 0){
-    		$('label[for="mail"]').prepend(sValidationErrorMail);
-    	}
+		$('#validation-error-mail').css("display", "block");
     }
     // check if at least one activity is checked, if not mark the field and display message
     if(aCheckedActivities.length === 0){
-    	if($("#validation-error-activities").length === 0){
-    		$(".activities").prepend(sValidationErrorActivities);
-    	}
+		$('#validation-error-activities').css("display", "block");
     }else{
     	// in case the input was invalid before, remove the message
-    	$("#validation-error-activities").remove();
+    	$("#validation-error-activities").css("display", "none");
     }
+    if($("#payment").val() === "credit card"){
+	    sCreditCard = $("#cc-num").val();
+		sZip = $("#zip").val();
+		sCvv = $("#cvv").val();
+		if(sCreditCard === ""){
+			$("#validation-error-cc-num").css("display", "block");
+		}else{
+			$("#validation-error-cc-num").css("display", "none");
+		}
+		if(sZip === ""){
+			$("#validation-error-zip").css("display", "block");
+		}else{
+			$("#validation-error-zip").css("display", "none");
+		}
+		if(sCvv === ""){
+			$("#validation-error-cvv").css("display", "block");
+		}else{
+			$("#validation-error-cvv").css("display", "none");
+		}
+    }
+
+
     // submit form if the name input is not empty, there is no validation error for the mail address and at least one activity is checked
-    if(sName.length !== 0 && $("#validation-error-mail").length === 0 && aCheckedActivities.length !== 0){
-    	const selectedPaymentOption = $("#payment").val();
+    if(sName !== "" && fnIsMailValid(sMail) && aCheckedActivities.length !== 0){
     	// if the selected payment option is not credit card, submit the form; if it is credit card check for validation errors, if there are no validation errors, submit the form
     	if(selectedPaymentOption !== "credit card"){
     		this.submit();
-    	}else if(selectedPaymentOption === "credit card" && $("#validation-error-cc-num").length === 0 && $("#validation-error-zip").length === 0 && $("#validation-error-cvv").length === 0){
+    	}else if(fnIsPaymentInfoValid(sCreditCard, 13, 16) && fnIsPaymentInfoValid(sZip, 5, 5) && fnIsPaymentInfoValid(sCvv, 3, 3)){
     		this.submit();
+    	}else{
+    		alert("Please enter valid payment information!");
     	}
     }
 })
